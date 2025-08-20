@@ -5,7 +5,7 @@
 
 local OPTS = {
     -- general
-    autostart = 0,
+    autostart = 1,
     deadzone = 50,
     sample_rate_ms = 48,
     input_delay = mp.get_property_native("input-doubleclick-time"),
@@ -21,6 +21,11 @@ local OPTS = {
     speed_enabled = 1,
     speed_button = "MBTN_MID",
     pps = 1000,
+    -- custom
+    hold_speed = 2.0,      -- playback speed when holding seek_volume_button
+    skip_seconds = 85,     -- skip amount when pressing '-'
+    skip_key = "-",        -- key to skip
+    toggle_key = "g",      -- key to toggle gestures
 }
 (require 'mp.options').read_options(OPTS)
 
@@ -304,4 +309,22 @@ function toggle_gestures()
     end
 end
 
-mp.add_key_binding(nil, "toggle", toggle_gestures)
+-- Hold seek_volume_button to change playback speed temporarily
+local function hold_speed(event)
+if event.event == "down" then
+    mp.set_property("speed", tostring(OPTS.hold_speed))
+    elseif event.event == "up" then
+        mp.set_property("speed", "1")
+        end
+        end
+        mp.add_forced_key_binding(OPTS.seek_volume_button, "hold-speed", hold_speed, {complex = true})
+
+        -- Skip by OPTS.skip_seconds
+        local function skip_custom()
+        mp.commandv("seek", tostring(OPTS.skip_seconds), "relative+exact")
+        end
+        mp.add_key_binding(OPTS.skip_key, "skip-custom", skip_custom)
+
+
+
+mp.add_key_binding(OPTS.toggle_key, "toggle", toggle_gestures)
