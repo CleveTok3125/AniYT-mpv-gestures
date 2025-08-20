@@ -1,3 +1,6 @@
+# Setup Instructions
+Save [gestures.lua](https://raw.githubusercontent.com/CleveTok3125/AniYT-mpv-gestures/refs/heads/master/gestures.lua) to working directory and the tool will load it automatically.
+
 # mpv-gestures
 Touchscreen and mouse gestures for mpv.
 
