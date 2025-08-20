@@ -22,9 +22,9 @@ local OPTS = {
     speed_button = "MBTN_MID",
     pps = 1000,
     -- custom
+    hold_speed_enabled = true,
+    hold_speed_time_ms = 300,
     hold_speed = 2.0,      -- playback speed when holding seek_volume_button
-    skip_seconds = 85,     -- skip amount when pressing '-'
-    skip_key = "-",        -- key to skip
     toggle_key = "g",      -- key to toggle gestures
 }
 (require 'mp.options').read_options(OPTS)
@@ -309,22 +309,35 @@ function toggle_gestures()
     end
 end
 
--- Hold seek_volume_button to change playback speed temporarily
+local hold_speed_timer = nil
+local hold_speed_active = false
+
+-- Updated hold_speed function
 local function hold_speed(event)
-if event.event == "down" then
-    mp.set_property("speed", tostring(OPTS.hold_speed))
-    elseif event.event == "up" then
-        mp.set_property("speed", "1")
-        end
-        end
-        mp.add_forced_key_binding(OPTS.seek_volume_button, "hold-speed", hold_speed, {complex = true})
+if not OPTS.hold_speed_enabled then
+    return
+    end
 
-        -- Skip by OPTS.skip_seconds
-        local function skip_custom()
-        mp.commandv("seek", tostring(OPTS.skip_seconds), "relative+exact")
+    if event.event == "down" then
+        hold_speed_timer = mp.add_timeout(OPTS.hold_speed_time_ms / 1000, function()
+        mp.set_property("speed", tostring(OPTS.hold_speed))
+        hold_speed_active = true
+        end)
+        elseif event.event == "up" then
+            if hold_speed_timer then
+                hold_speed_timer:kill()
+                hold_speed_timer = nil
+                end
+
+                if hold_speed_active then
+                    mp.set_property("speed", "1")
+                    hold_speed_active = false
+                    else
+                        mp.command("cycle pause")
+                    end
         end
-        mp.add_key_binding(OPTS.skip_key, "skip-custom", skip_custom)
+end
 
-
+mp.add_forced_key_binding(OPTS.seek_volume_button, "hold-speed-or-toggle", hold_speed, {complex = true})
 
 mp.add_key_binding(OPTS.toggle_key, "toggle", toggle_gestures)
